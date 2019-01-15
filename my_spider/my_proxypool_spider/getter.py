@@ -15,14 +15,14 @@ class ProxyPoolGetter(object):
 
         self.Reids = redis.Redis(host='10.0.0.45', port=6379)
 
-    def _get_proxies_text(self, index):
+    def _get_proxies_text(self, index):#从西刺代理获取代理信息（未解析）
         r1 = requests.get(self.base_proxy_getter_url.format(index), headers=self.headers)
         assert r1.status_code == 200
         soup = BeautifulSoup(r1.text, 'lxml')
         trs = soup.select('#ip_list  tr')
         return trs, index
 
-    def _parse_proxies_text(self, trs, page_number):
+    def _parse_proxies_text(self, trs, page_number):#解析从西刺代理获取的代理信息，并返回。这是一个生成器
         for i in trs:
             tds = i.select('td')
             try:
@@ -35,7 +35,8 @@ class ProxyPoolGetter(object):
             except:
                 pass
 
-    async def _test_singl_proxy(self, test_type,proxy, *args, **kwargs):  # 使用aiohttp方式，已经成功
+    async def _test_singl_proxy(self, test_type,proxy, *args, **kwargs):
+        # 代理有效性检测，内部分成了1.网页代理信息检测，并放入reids。2.现有的redis代理有效性检测
         # print('开始测试',proxy[0])
         url = 'https://www.baidu.com'
         try:
@@ -55,8 +56,9 @@ class ProxyPoolGetter(object):
                             print("地址池测试成功：代理%s" % (proxy[0]))
                         else:
                             print("地址池测试失败，已从地址池删除：代理%s" % (proxy[0]))
+                            #redis实际有132个，测试只有50+个成功，但没有一个现实失败，所以那些未显示的是已经时效的代理，连response都没有返回了吧。。。
                             proxy_info_json = json.dumps(proxy)
-                            self.Reids.srem(http_set,proxy_info_json)
+                            self.Reids.srem('http_set',proxy_info_json)
 
         except Exception as error:
             # print("failed",proxy[0],error)
@@ -107,4 +109,5 @@ if __name__ == "__main__":
     obj.valid_test()#这里进行代理地址池有效性检测
     # obj.get_vaild_proxy()#这里从西刺代理获取有效的代理信息，并放入redis
 
-
+#也可以这样来测试吗？。。
+#telnetlib.Telnet(verify_ip, verify_ip_port, timeout=10)
