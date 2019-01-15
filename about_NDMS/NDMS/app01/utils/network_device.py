@@ -1,3 +1,4 @@
+import datetime
 import telnetlib, time, re
 from app01.utils.others import mydecode, my_read_very_eager, port_mapping
 from app01.utils.NDMS_settings import username1, password1
@@ -154,7 +155,8 @@ class Cisco(NetworkDevie):
         my_read_very_eager(self.tn)
         self.tn.write(b"enable\n")
         self.tn.read_until(b"password:", timeout=10)
-        self.tn.write(password + b"\n")
+        # self.tn.write(password + b"\n")
+        self.tn.write(b"hzcnc_enable\n")
         time.sleep(0.1)
         # 以下为交换机操作
         self.tn.write(b"terminal length 0\n")  # 设置命令不分页显示,CiscoNexus下次登录默认分页
@@ -653,6 +655,7 @@ class Epon(H3C, Raisecom):
             self.__olts_check_update()
             self.__onus_check_update()
             self.close(index)
+            print('%s%s EPON更新结束 %s'%(self.device_obj.tag.version.name,self.IP,datetime.datetime.now()))
         except Exception as errors:
             print(errors)
             print("%s  %s出错，尝试关闭连接" % (self.IP,self.abc))
