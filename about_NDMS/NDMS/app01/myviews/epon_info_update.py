@@ -5,7 +5,8 @@ from app01.utils.network_device import Epon
 from app01.utils.NDMS_settings import INT3
 
 def epon_create_update(req):
-    objs_epon = models.Device.objects.filter(tag__name="EPON")
+    # objs_epon = models.Device.objects.filter(tag__name="EPON")
+    objs_epon = models.Device.objects.filter(tag__name="EPON",tag__version__name='Version 5.20')
     print("开始进行EPON设备信息更新")
     pool = ThreadPoolExecutor(INT3)
     for obj_epon in objs_epon:

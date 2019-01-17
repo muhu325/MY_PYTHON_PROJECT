@@ -328,18 +328,18 @@ class Juniper(NetworkDevie):
 
 
 class Epon(H3C, Raisecom):
-    # def __init__(self, IP):
-    #     self.device_obj = models.Device.objects.get(IP=IP)
-    #     self.IP = IP
-    #     self.tn = self.__connect()
 
-    # def __connect(self):
-    #     obj = None
-    #     try:
-    #         obj = telnetlib.Telnet(self.IP, port=23, timeout=10)
-    #     except:
-    #         print("telnet %s连接失败，创建EPON对象失败" % self.IP)
-    #     return obj
+    def __init__(self, IP):
+        self.device_obj = models.Device.objects.get(IP=IP)
+        self.IP = IP
+
+    def __connect(self):
+        obj = None
+        try:
+            obj = telnetlib.Telnet(self.IP, port=23, timeout=10)
+        except:
+            print("telnet %s连接失败，创建EPON对象失败" % self.IP)
+        return obj
 
     def __version_check_update(self):
         self.abc = "版本检查时"
@@ -349,7 +349,6 @@ class Epon(H3C, Raisecom):
             content = mydecode(my_read_very_eager(self.tn))
             time.sleep(1)
             if "Username" in content:  # 判断为华三7502  软件版本5.0
-                # print("判断为7502E")
                 self.tn.write(username1 + b"\n")
                 self.tn.read_until(b"Password:")
                 self.tn.write(password1 + b"\n")
@@ -363,20 +362,16 @@ class Epon(H3C, Raisecom):
                 self.tn.write(b'screen-length disable \n')
                 time.sleep(0.1)
                 content = mydecode(my_read_very_eager(self.tn))
-
                 self.tn.write(b'dis version \n')
                 time.sleep(0.2)
                 content = mydecode(my_read_very_eager(self.tn))
-
                 name = re.findall("<(.*)>", content)
                 version = re.findall("Version \d\.\d{1,2}", content)
                 if name and self.device_obj.name != name[0].lower():  # 设备名称有变化，则更新
                     self.device_obj.name = name[0].lower()
-
                 company_obj = models.Company.objects.get(name="H3C")
                 version_obj = models.Version.objects.get(name="Version 5.20")
                 authmode_obj = models.AuthMode.objects.get(name="aaa+super")
-
                 tag_obj = getattr(self.device_obj, "tag", None)
                 # print("tag_obj:",tag_obj)
                 if tag_obj and tag_obj.version == version_obj and tag_obj.authmode == authmode_obj and \
@@ -651,6 +646,7 @@ class Epon(H3C, Raisecom):
     def epon_check_update(self,index=0):
         self.abc = ""
         try:
+            self.tn = self.__connect()# epon设备特殊，因为需要大量更新，若这个放在__init__中，有可能导致时间过长失联
             self.__version_check_update()
             self.__olts_check_update()
             self.__onus_check_update()
@@ -662,6 +658,7 @@ class Epon(H3C, Raisecom):
             self.close()
 
     def device_login(self, username, password):
+        self.tn = self.__connect()# epon设备特殊，因为需要大量更新，若这个放在__init__中，有可能导致时间过长失联
         if self.device_obj.tag.version.name == "Version 5.20":
             self._telnet_h3c_ver_5(username, password)
         elif self.device_obj.tag.version.name == "Version 7.1":

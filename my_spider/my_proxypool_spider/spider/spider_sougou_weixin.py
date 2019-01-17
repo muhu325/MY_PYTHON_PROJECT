@@ -13,7 +13,7 @@ class Spider(object):
 
 
 
-    def get_sougou_html(self,keyword,page_num):
+    def get_sougou_html(self,keyword:str,page_num:int):
         params = {
             'query':keyword,
             'type':2,
@@ -22,15 +22,18 @@ class Spider(object):
         if not self.proxy:
             response = requests.get(self.base_sougou_url,params=params,headers=self.headers,allow_redirects=False)
         else:
-            print('携带代理访问',self.proxy)
-            response = requests.get(self.base_sougou_url,proxies=self.proxy,params=params,headers=self.headers,allow_redirects=False)
+            # print('携带代理访问',self.proxy)
+            response = requests.get(self.base_sougou_url,proxies=self.proxy,params=params,headers=self.headers,timeout=20,allow_redirects=False)
         if response.status_code == 200:
+            # print(response.text)
             return response.text
         elif response.status_code == 302:
             proxy_info = requests.get('http://127.0.0.1:5000/get').text
             self.proxy = {'http':proxy_info}
-            print('302,替换代理为：',proxy_info)
+            print('302,替换代理为：',self.proxy)
             self.get_sougou_html(keyword,page_num)
+        else:
+            print('其他错误')
 
 
     def parse_sougou_html(self,html):
